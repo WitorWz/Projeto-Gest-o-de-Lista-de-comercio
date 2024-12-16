@@ -1,0 +1,58 @@
+import os
+import pandas as pd
+from fpdf import FPDF
+from tkinter import messagebox
+
+def converter_para_pdf(nome_arquivo):
+    try:
+        # Define o caminho da pasta de instalação
+        pasta_instalacao = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(pasta_instalacao, nome_arquivo)
+
+        # Verifica se o arquivo existe na pasta de instalação
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f"Arquivo '{nome_arquivo}' não encontrado na pasta de instalação.")
+
+        # Carrega os dados do arquivo Excel
+        df = pd.read_excel(file_path)
+        
+        # Cria o objeto PDF
+        pdf = FPDF()
+        pdf.set_auto_page_break(auto=True, margin=15)
+        pdf.add_page()
+        pdf.set_font("Arial", size=12)
+
+        # Adiciona o título
+        pdf.set_font("Arial", style="B", size=16)
+        pdf.cell(0, 10, txt="Relatório de Dados", ln=True, align='C')
+        pdf.ln(10)
+        
+        # Define o tamanho da célula para cabeçalho e dados
+        col_widths = [max(pdf.get_string_width(str(col)) + 10, 40) for col in df.columns]
+        header_height = 8
+        row_height = 7
+
+        # Adiciona o cabeçalho da tabela
+        pdf.set_font("Arial", style="B", size=12)
+        for i, col in enumerate(df.columns):
+            pdf.cell(col_widths[i], header_height, col, border=1, align='C')
+        pdf.ln()
+
+        # Adiciona os dados da tabela
+        pdf.set_font("Arial", size=10)
+        for _, row in df.iterrows():
+            for i, value in enumerate(row):
+                pdf.cell(col_widths[i], row_height, str(value), border=1, align='C')
+            pdf.ln()
+
+        # Salva o PDF na área de trabalho
+        desktop = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop')
+        pdf_file_path = os.path.join(desktop, nome_arquivo.replace('.xlsx', '.pdf'))
+        pdf.output(pdf_file_path)
+
+        # Exibe mensagem de sucesso
+        messagebox.showinfo("Sucesso", f"Arquivo convertido para PDF com sucesso: {pdf_file_path}")
+    
+    except Exception as e:
+        # Exibe mensagem de erro
+        messagebox.showerror("Erro", f"Erro ao converter para PDF: {e}")
